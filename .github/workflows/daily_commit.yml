@@ -1,0 +1,40 @@
+name: Daily Fancy Job Incrementer
+
+on:
+  schedule:
+    # Runs every day at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allows you to trigger it manually to test it right now
+
+jobs:
+  increment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Grants the action permission to push commits to your repo
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Increment number in file
+        run: |
+          # Check if number.txt exists, read it or start at 1
+          if [ -f number.txt ]; then
+            current=$(cat number.txt | grep -o '[0-9]*' | head -n 1)
+            if [ -z "$current" ]; then current=0; fi
+            next=$((current + 1))
+          else
+            next=1
+          fi
+          
+          # Write the updated number to number.txt
+          echo "Update number: $next" > number.txt
+          echo "Successfully updated to $next"
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add number.txt
+          git commit -m "Update number: $(date +%Y-%m-%d)" || echo "No changes to commit"
+          git push
